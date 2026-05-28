@@ -1,0 +1,69 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  SISWA
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String        @unique
+  password     String
+  role         Role          @default(SISWA)
+
+  applications Application[]
+
+  createdAt    DateTime      @default(now())
+}
+
+model Company {
+  id           Int           @id @default(autoincrement())
+  name         String
+  address      String
+  field        String
+  description  String
+  quota        Int
+  status       Boolean       @default(true)
+
+  applications Application[]
+
+  createdAt    DateTime      @default(now())
+}
+
+model Application {
+  id              Int                 @id @default(autoincrement())
+
+  userId          Int
+  companyId       Int
+
+  cvFile          String
+  portfolioFile   String
+  transcriptFile  String
+
+  status          ApplicationStatus   @default(PENDING)
+  note            String?
+
+  user            User      @relation(fields: [userId], references: [id])
+  company         Company   @relation(fields: [companyId], references: [id])
+
+  createdAt       DateTime @default(now())
+}
