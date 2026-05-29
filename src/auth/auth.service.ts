@@ -40,9 +40,13 @@ export class AuthService {
     });
 
     return {
-      message: 'Register success',
-      data: user,
-    };
+  message: 'Register success',
+  data: {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+  },
+};
   }
 
   async login(dto: LoginDto) {
