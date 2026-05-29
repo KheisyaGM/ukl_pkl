@@ -64,6 +64,17 @@ model Application {
 
   user            User      @relation(fields: [userId], references: [id])
   company         Company   @relation(fields: [companyId], references: [id])
+  statusLogs      StatusLog[]
 
   createdAt       DateTime @default(now())
+}
+
+model StatusLog {
+  id            Int               @id @default(autoincrement())
+  applicationId Int
+  status        ApplicationStatus
+  note          String?
+  changedAt     DateTime          @default(now())
+
+  application   Application       @relation(fields: [applicationId], references: [id])
 }

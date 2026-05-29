@@ -13,12 +13,15 @@ import {
   SwaggerModule,
   DocumentBuilder,
 } from '@nestjs/swagger';
+
 async function bootstrap() {
 
   const app =
     await NestFactory.create<NestExpressApplication>(
       AppModule,
     );
+
+  app.enableCors();
 
   app.use(
     '/uploads',
@@ -28,24 +31,26 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe(),
   );
-const config = new DocumentBuilder()
-  .setTitle('PKL API')
-  .setDescription('API Sistem PKL')
-  .setVersion('1.0')
-  .addBearerAuth()
-  .build();
 
-const document = SwaggerModule.createDocument(
-  app,
-  config,
-);
+  const config = new DocumentBuilder()
+    .setTitle('PKL API')
+    .setDescription('API Sistem PKL')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
 
-SwaggerModule.setup(
-  'docs',
-  app,
-  document,
-);
-  await app.listen(3000);
+  const document = SwaggerModule.createDocument(
+    app,
+    config,
+  );
+
+  SwaggerModule.setup(
+    'docs',
+    app,
+    document,
+  );
+
+  await app.listen(3000, '0.0.0.0');
 
 }
 

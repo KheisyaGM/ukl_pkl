@@ -1,8 +1,8 @@
+import { Type } from 'class-transformer';
 import { IsInt } from 'class-validator';
 
 export class CreateApplicationDto {
 
   @IsInt()
-  companyId!: number;
-
-}
+  @Type(() => Number)
+  companyId!: number;}
