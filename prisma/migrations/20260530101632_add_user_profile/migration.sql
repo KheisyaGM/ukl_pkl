@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE `user` ADD COLUMN `address` VARCHAR(191) NULL,
+ALTER TABLE `User` ADD COLUMN `address` VARCHAR(191) NULL,
     ADD COLUMN `birthDate` DATETIME(3) NULL,
     ADD COLUMN `birthPlace` VARCHAR(191) NULL,
     ADD COLUMN `gender` VARCHAR(191) NULL,
