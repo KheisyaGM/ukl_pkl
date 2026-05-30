@@ -30,6 +30,13 @@ model User {
   password     String
   role         Role          @default(SISWA)
 
+  // Data diri tambahan
+  gender       String?
+  birthPlace   String?
+  birthDate    DateTime?
+  phone        String?
+  address      String?
+
   applications Application[]
 
   createdAt    DateTime      @default(now())
