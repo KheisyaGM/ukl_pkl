@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -90,22 +90,26 @@ export class CompaniesService {
 
   }
 
-  async remove(id: number) {
+ async remove(id: number) {
+  // Cek apakah company masih punya application
+  const applications = await this.prisma.application.findMany({
+    where: { companyId: id },
+  });
 
-    const deletedCompany =
-      await this.prisma.company.delete({
-        where: {
-          id,
-        },
-      });
-
-    return {
-      message:
-        'Company deleted successfully',
-
-      deletedData: deletedCompany,
-    };
-
+  if (applications.length > 0) {
+    throw new BadRequestException(
+      `Company tidak bisa dihapus karena masih memiliki ${applications.length} lamaran aktif`,
+    );
   }
+
+  const deletedCompany = await this.prisma.company.delete({
+    where: { id },
+  });
+
+  return {
+    message: 'Company deleted successfully',
+    deletedData: deletedCompany,
+  };
+}
 
 }
