@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Application } from '@prisma/client';
@@ -13,17 +13,46 @@ export class ApplicationsService {
   ) {}
 
   async create(data: CreateApplicationPayload) {
+
+    // 1. Cek user exist & ambil data diri
+    const user = await this.prisma.user.findUnique({
+      where: { id: data.userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // 2. Validasi data diri harus sudah lengkap
+    if (!user.gender || !user.birthPlace || !user.birthDate || !user.phone || !user.address) {
+      throw new BadRequestException(
+        'Lengkapi data diri terlebih dahulu sebelum mengajukan PKL (gender, tempat lahir, tanggal lahir, nomor HP, alamat)',
+      );
+    }
+
+    // 3. Buat pengajuan + sertakan data diri di response
     return this.prisma.application.create({
       data: {
-        user: {
-          connect: { id: data.userId },
-        },
-        company: {
-          connect: { id: Number(data.companyId) },
-        },
+        user: { connect: { id: data.userId } },
+        company: { connect: { id: Number(data.companyId) } },
         cvFile: data.cvFile,
         portfolioFile: data.portfolioFile,
         transcriptFile: data.transcriptFile,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            gender: true,
+            birthPlace: true,
+            birthDate: true,
+            phone: true,
+            address: true,
+          },
+        },
+        company: true,
       },
     });
   }
@@ -80,6 +109,7 @@ export class ApplicationsService {
       },
       include: { user: true, company: true },
     });
+
     return {
       message: 'Application updated successfully',
       data: updated,
@@ -101,33 +131,31 @@ export class ApplicationsService {
   }
 
   async updateStatus(
-  id: number,
-  status: Application['status'],
-  note?: string,
-) {
-  const [updatedApplication] = await this.prisma.$transaction([
-    // 1. Update status di tabel application
-    this.prisma.application.update({
-      where: { id },
-      data: { status, note },
-      include: {
-        user: true,
-        company: true,
-      },
-    }),
+    id: number,
+    status: Application['status'],
+    note?: string,
+  ) {
+    const [updatedApplication] = await this.prisma.$transaction([
+      this.prisma.application.update({
+        where: { id },
+        data: { status, note },
+        include: {
+          user: true,
+          company: true,
+        },
+      }),
+      this.prisma.statusLog.create({
+        data: {
+          applicationId: id,
+          status,
+          note,
+        },
+      }),
+    ]);
 
-    // 2. Catat riwayat di tabel statusLog
-    this.prisma.statusLog.create({
-      data: {
-        applicationId: id,
-        status,
-        note,
-      },
-    }),
-  ]);
-
-  return {
-    message: `Application status updated to ${status}`,
-    data: updatedApplication,
-  };}
+    return {
+      message: `Application status updated to ${status}`,
+      data: updatedApplication,
+    };
+  }
 }
