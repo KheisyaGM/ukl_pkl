@@ -5,4 +5,4 @@
 
 */
 -- AlterTable
-ALTER TABLE `user` MODIFY `gender` ENUM('LAKI_LAKI', 'PEREMPUAN') NULL;
+ALTER TABLE `User` MODIFY `gender` ENUM('LAKI_LAKI', 'PEREMPUAN') NULL;
