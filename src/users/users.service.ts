@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-
+import {Gender} from '@prisma/client';
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
@@ -67,7 +67,7 @@ export class UsersService {
       data: {
         ...(dto.name && { name: dto.name }),
         ...(dto.email && { email: dto.email }),
-        ...(dto.gender && { gender: dto.gender }),
+        ...(dto.gender && { gender: dto.gender as Gender}),
         ...(dto.birthPlace && { birthPlace: dto.birthPlace }),
         ...(dto.birthDate && { birthDate: new Date(dto.birthDate) }),
         ...(dto.phone && { phone: dto.phone }),
