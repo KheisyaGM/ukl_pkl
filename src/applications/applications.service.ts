@@ -75,6 +75,26 @@ export class ApplicationsService {
     };
   }
 
+  // ← TAMBAHAN BARU
+  async findByUser(userId: number) {
+    const applications = await this.prisma.application.findMany({
+      where: { userId },
+      include: {
+        user: true,
+        company: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return {
+      message: 'My applications retrieved successfully',
+      total: applications.length,
+      data: applications,
+    };
+  }
+
   async findOne(id: number) {
     const application = await this.prisma.application.findUnique({
       where: { id },

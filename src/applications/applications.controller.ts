@@ -35,15 +35,15 @@ import { UpdateStatusDto } from './dto/update-status.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 
 @ApiTags('applications')
+@ApiBearerAuth()
 @Controller('applications')
 export class ApplicationsController {
   constructor(private applicationsService: ApplicationsService) {}
 
   // =========================
-  // CREATE APPLICATION
+  // CREATE APPLICATION (SISWA)
   // =========================
   @Post()
-  @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -56,8 +56,9 @@ export class ApplicationsController {
       },
     },
   })
-  @UseGuards(JwtAuthGuard)
-@UseInterceptors(
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SISWA') // ← fix: tambah RolesGuard & role
+  @UseInterceptors(
     FileFieldsInterceptor(
       [
         { name: 'cvFile', maxCount: 1 },
@@ -76,93 +77,98 @@ export class ApplicationsController {
     ),
   )
   async create(
-  @UploadedFiles() files: any,
-  @Body() dto: CreateApplicationDto,
-  @Request() req,
-) {
-  if (
-    !files?.cvFile?.[0] ||
-    !files?.portfolioFile?.[0] ||
-    !files?.transcriptFile?.[0]
+    @UploadedFiles() files: any,
+    @Body() dto: CreateApplicationDto,
+    @Request() req,
   ) {
-    throw new BadRequestException('All files are required');
+    if (
+      !files?.cvFile?.[0] ||
+      !files?.portfolioFile?.[0] ||
+      !files?.transcriptFile?.[0]
+    ) {
+      throw new BadRequestException('All files are required');
+    }
+
+    if (!dto.companyId) {
+      throw new BadRequestException('companyId is required');
+    }
+
+    return this.applicationsService.create({
+      userId: req.user.sub,
+      companyId: Number(dto.companyId),
+      cvFile: files.cvFile[0].filename,
+      portfolioFile: files.portfolioFile[0].filename,
+      transcriptFile: files.transcriptFile[0].filename,
+    });
   }
-
-  if (!dto.companyId) {
-    throw new BadRequestException('companyId is required');
-  }
-
-  console.log('USER:', req.user); // 🔥 DEBUG: Cek isi req.user
-  console.log('FILES:', files); // 🔥 DEBUG: Cek file yang diupload
-  console.log('DTO:', dto); // 🔥 DEBUG: Cek isi DTO
-
-  return this.applicationsService.create({
-    userId: req.user.sub, // 🔥 FIX INI PALING PENTING
-    companyId: Number(dto.companyId),
-    cvFile: files.cvFile[0].filename,
-    portfolioFile: files.portfolioFile[0].filename,
-    transcriptFile: files.transcriptFile[0].filename,
-  });
-}
 
   // =========================
   // GET ALL (ADMIN)
   // =========================
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')findAll() {
+  @Roles('ADMIN')
+  findAll() {
     return this.applicationsService.findAll();
   }
 
   // =========================
-  // GET DETAIL
+  // GET MY APPLICATIONS (SISWA) ← endpoint baru
+  // =========================
+  @Get('my')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SISWA')
+  findMyApplications(@Request() req) {
+    return this.applicationsService.findByUser(req.user.sub);
+  }
+
+  // =========================
+  // GET DETAIL BY ID (SISWA & ADMIN)
   // =========================
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SISWA', 'ADMIN') // ← fix: tambah RolesGuard & role
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.applicationsService.findOne(id);
   }
 
   // =========================
-  // UPDATE APPLICATION (USER)
+  // UPDATE APPLICATION (SISWA)
   // =========================
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SISWA') // ← fix: tambah RolesGuard & role
   updateApplication(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateApplicationDto,
     @Request() req,
   ) {
-    return this.applicationsService.updateApplication(
-      id,
-      dto,
-      req.user.sub,
-    );
+    return this.applicationsService.updateApplication(id, dto, req.user.sub);
   }
 
   // =========================
-  // DELETE APPLICATION (USER)
+  // DELETE APPLICATION (SISWA)
   // =========================
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SISWA') // ← fix: tambah RolesGuard & role
   deleteApplication(
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
   ) {
-    return this.applicationsService.deleteApplication(
-      id,
-      req.user.sub,
-    );
+    return this.applicationsService.deleteApplication(id, req.user.sub);
   }
+
+  // =========================
   // UPDATE STATUS (ADMIN)
   // =========================
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')updateStatus(
+  @Roles('ADMIN')
+  updateStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateStatusDto,
-  ) {return this.applicationsService.updateStatus(
-      id,dto.status,dto.note,
-    );
-}
+  ) {
+    return this.applicationsService.updateStatus(id, dto.status, dto.note);
+  }
 }
