@@ -75,7 +75,6 @@ export class ApplicationsService {
     };
   }
 
-  // ← TAMBAHAN BARU
   async findByUser(userId: number) {
     const applications = await this.prisma.application.findMany({
       where: { userId },
@@ -155,27 +154,47 @@ export class ApplicationsService {
     status: Application['status'],
     note?: string,
   ) {
-    const [updatedApplication] = await this.prisma.$transaction([
-      this.prisma.application.update({
+    // ambil data application dulu untuk dapat companyId
+    const application = await this.prisma.application.findUnique({
+      where: { id },
+    });
+
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      // update status application
+      const updatedApplication = await tx.application.update({
         where: { id },
         data: { status, note },
         include: {
           user: true,
           company: true,
         },
-      }),
-      this.prisma.statusLog.create({
+      });
+
+      // catat status log
+      await tx.statusLog.create({
         data: {
           applicationId: id,
           status,
           note,
         },
-      }),
-    ]);
+      });
 
-    return {
-      message: `Application status updated to ${status}`,
-      data: updatedApplication,
-    };
+      // kurangi quota kalau ACCEPTED ← TAMBAHAN BARU
+      if (status === 'ACCEPTED') {
+        await tx.company.update({
+          where: { id: application.companyId },
+          data: { quota: { decrement: 1 } },
+        });
+      }
+
+      return {
+        message: `Application status updated to ${status}`,
+        data: updatedApplication,
+      };
+    });
   }
 }
