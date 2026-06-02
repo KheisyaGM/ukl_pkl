@@ -34,7 +34,7 @@ async function bootstrap() {
     customCss:'',
     swaggerOptions: {
       persistAuthorization: true,
-      url:'/docs-json',
+      url:`https://uklpkl-production.up.railway.app/docs-json`,
       validatorUrl:null,
     },
   });
