@@ -33,6 +33,7 @@ async function bootstrap() {
     customSiteTitle: 'PKL API Docs',
     swaggerOptions: {
       persistAuthorization: true,
+      url:'/docs-json',
     },
   });
 
