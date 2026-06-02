@@ -31,9 +31,11 @@ async function bootstrap() {
 
   SwaggerModule.setup('docs', app, document, {
     customSiteTitle: 'PKL API Docs',
+    customCss:'',
     swaggerOptions: {
       persistAuthorization: true,
       url:'/docs-json',
+      validatorUrl:null,
     },
   });
 
