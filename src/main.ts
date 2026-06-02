@@ -1,36 +1,24 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-
 import { AppModule } from './app.module';
-
 import { NestExpressApplication } from '@nestjs/platform-express';
-
 import { join } from 'path';
-
 import * as express from 'express';
-
-import {
-  SwaggerModule,
-  DocumentBuilder,
-} from '@nestjs/swagger';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
 
-  const app =
-    await NestFactory.create<NestExpressApplication>(
-      AppModule,
-    );
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  app.enableCors();
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type, Authorization',
+  });
 
-  app.use(
-    '/uploads',
-    express.static(join(__dirname, '..', 'uploads')),
-  );
+  app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
 
-  app.useGlobalPipes(
-    new ValidationPipe(),
-  );
+  app.useGlobalPipes(new ValidationPipe());
 
   const config = new DocumentBuilder()
     .setTitle('PKL API')
@@ -39,24 +27,16 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
 
-  const document = SwaggerModule.createDocument(
-    app,
-    config,
-  );
+  const document = SwaggerModule.createDocument(app, config);
 
-  SwaggerModule.setup(
-    'docs',
-    app,
-    document,
-    {
-      customSiteTitle: 'PKL API Docs',
-      swaggerOptions: {
-        persistAuthorization: true,
-      },
-    }
-  );
+  SwaggerModule.setup('docs', app, document, {
+    customSiteTitle: 'PKL API Docs',
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  });
 
-  await app.listen(process.env.PORT ?? 3000, '0.0.0.0'); // ← fix PORT
+  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 
 }
 
