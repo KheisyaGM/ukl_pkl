@@ -48,9 +48,15 @@ async function bootstrap() {
     'docs',
     app,
     document,
+    {
+      customSiteTitle: 'PKL API Docs',
+      swaggerOptions: {
+        persistAuthorization: true,
+      },
+    }
   );
 
-  await app.listen(3000, '0.0.0.0');
+  await app.listen(process.env.PORT ?? 3000, '0.0.0.0'); // ← fix PORT
 
 }
 
